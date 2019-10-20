@@ -14,6 +14,9 @@ boolean mouseDown = false;
 PVector mouseClickStart = new PVector(0, 0);
 PVector mouseDragDelta = new PVector(0, 0);
 
+// Error time
+int error_time = 0;
+
 // Button
 Button buttons[] = new Button[4];
 Button GetHoveredButton()
@@ -39,7 +42,7 @@ ImageDisplay GetHoveredDisplay()
 {
   for (int i = 0; i < 5; i++)
   {
-    if (displays[i].isHovered())
+    if (displays[i].isHovered() && displays[i] != displayDragged)
       return displays[i];
   }
 
@@ -193,6 +196,7 @@ void draw()
     if (displays[i] != null)
       displays[i].drawOutline();
   }
+  
   stroke(GetHoveredDisplay().m_outlineColor);
   strokeWeight(3);
   GetHoveredDisplay().drawOutline();
@@ -206,9 +210,13 @@ void draw()
   }
 
   // Settings Text
-  DropshadowText("[C] Combine Channels", image_size_small + 2, image_size_large - 4, color(0), color(255));
-  DropshadowText("[X] Export Combined Image", image_size_small + 2, image_size_large - 4 - 20, color(0), color(255));
-  DropshadowText("[B] Break Combined Image into Channels", image_size_small + 2, image_size_large - 4 - 40, color(0), color(255));
+  int _text_x = image_size_small + 2;
+  int _text_y_base = image_size_large - 4;
+  DropshadowText("[C] Combine Channels", _text_x, _text_y_base, color(0), color(255));
+  DropshadowText("[X] Export Combined Image", _text_x, _text_y_base - 15, color(0), color(255));
+  DropshadowText("[B] Break Combined Image into Channels", _text_x, _text_y_base - 30, color(0), color(255));
+  DropshadowText("[Scroll Click] Delete image", _text_x, _text_y_base - 45, color(0), color(255));
+  DropshadowText("You can re-order channels by dragging and dropping", _text_x, _text_y_base - 60, color(0), color(255));
 
   // Export Text
   DropshadowText("Export Format:", 550, 503 - 80, color(0), color(255));
@@ -216,6 +224,10 @@ void draw()
   DropshadowText("(JPG)", 589, 503 - 40, color(0), color(255));
   DropshadowText("(TIFF)", 589, 503 - 20, color(0), color(255));
   DropshadowText("(TGA)", 589, 503, color(0), color(255));
+  
+  // Error Message
+  if(error_time > millis())
+    DropshadowText("ERROR: FILE SIZES MUST MATCH WIDTH/HEIGHT", 320 - 80, 256 - 14, color(0), color(255, 50, 50, 255));
 
   // Draw Buttons
   for (int i = 0; i < 4; i++)
@@ -239,10 +251,12 @@ void keyPressed()
       break;
 
     case 2:
+      error_time = millis() + 3000;
       println("Combine Error: Channel Width Mismatch");
       break;
 
     case 3:
+      error_time = millis() + 3000;
       println("Combine Error: Channel Height Mismatch");
       break;
     }
@@ -255,6 +269,15 @@ void keyPressed()
       selectOutput("Select a file to write to:", "fileSelected");
     else
       println("Export Error: image empty");
+  }
+
+  // Break Combined Image
+  if (key == 'b' || key == 'B')
+  {
+    if (display0 != null && display0.m_image != null)
+      BreakCombinedImage();
+    else
+      println("Break Error: image empty");
   }
 }
 
@@ -295,18 +318,36 @@ void fileSelected(File selection)
 
 void mousePressed()
 {
-  mouseClickStart = new PVector(mouseX, mouseY);
-  mouseDown = true;
+  // Left Click
+  if (mouseButton == LEFT)
+  {
+    mouseClickStart = new PVector(mouseX, mouseY);
+    mouseDown = true;
 
-  // Check if button was clicked
-  Button clickedButton = GetHoveredButton();
+    // Check if button was clicked
+    Button clickedButton = GetHoveredButton();
 
-  // If not check if selection was clicked
-  if (clickedButton == null)
-    displayHighlighted = GetHoveredDisplay();
-  // Update clicked button
-  else
-    selected_exportOption = clickedButton;
+    // If no button is hovered, check if selection was clicked
+    if (clickedButton == null)
+      displayHighlighted = GetHoveredDisplay();
+    // Update clicked button
+    else
+      selected_exportOption = clickedButton;
+  }
+  // Middle click
+  else if (mouseButton == CENTER)
+  {
+    // Check if button was clicked
+    Button clickedButton = GetHoveredButton();
+
+    // If no button is hovered, check if selection was clicked
+    if (clickedButton == null)
+    {
+      // Remove image
+      displayHighlighted = GetHoveredDisplay();
+      displayHighlighted.m_image = null;
+    }
+  }
 }
 void mouseReleased()
 {

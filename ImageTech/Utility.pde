@@ -1,4 +1,36 @@
 
+void BreakCombinedImage()
+{
+  display1.m_image = null;
+  display2.m_image = null;
+  display3.m_image = null;
+  display4.m_image = null;
+  
+  int _width = display0.m_image.width;
+  int _height = display0.m_image.height;
+  
+  display1.m_image = createImage(_width, _height, RGB);
+   display2.m_image = createImage(_width, _height, RGB);
+    display3.m_image = createImage(_width, _height, RGB);
+     display4.m_image = createImage(_width, _height, RGB);
+  
+  for (int i = 0; i < display0.m_image.pixels.length; i++)
+  {
+    //int x = i % _width;
+    //int y = i / _height;
+    float _r = red(display0.m_image.pixels[i]);
+    float _g = green(display0.m_image.pixels[i]);
+    float _b = blue(display0.m_image.pixels[i]);
+    float _a = alpha(display0.m_image.pixels[i]);
+
+    display1.m_image.pixels[i] = color(_r,_r,_r);
+    display2.m_image.pixels[i] = color(_g,_g,_g);
+    display3.m_image.pixels[i] = color(_b,_b,_b);
+    display4.m_image.pixels[i] = color(_a,_a,_a);
+  }
+
+}
+
 int CombineChannels()
 {
   boolean Channels[] = new boolean[4]; 

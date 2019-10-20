@@ -45,7 +45,7 @@ class ImageDisplay
   void drawOutline()
   {
     // outline
-    //stroke(m_outlineColor);
+
     line(m_position.x, m_position.y, m_position.x + m_size.x, m_position.y);
     line(m_position.x, m_position.y, m_position.x, m_position.y + m_size.y);
     line(m_position.x + m_size.x, m_position.y + m_size.y, m_position.x + m_size.x, m_position.y);
