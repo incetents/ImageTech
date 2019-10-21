@@ -5,15 +5,15 @@ void BreakCombinedImage()
   display2.m_image = null;
   display3.m_image = null;
   display4.m_image = null;
-  
+
   int _width = display0.m_image.width;
   int _height = display0.m_image.height;
-  
+
   display1.m_image = createImage(_width, _height, RGB);
-   display2.m_image = createImage(_width, _height, RGB);
-    display3.m_image = createImage(_width, _height, RGB);
-     display4.m_image = createImage(_width, _height, RGB);
-  
+  display2.m_image = createImage(_width, _height, RGB);
+  display3.m_image = createImage(_width, _height, RGB);
+  display4.m_image = createImage(_width, _height, RGB);
+
   for (int i = 0; i < display0.m_image.pixels.length; i++)
   {
     //int x = i % _width;
@@ -23,12 +23,11 @@ void BreakCombinedImage()
     float _b = blue(display0.m_image.pixels[i]);
     float _a = alpha(display0.m_image.pixels[i]);
 
-    display1.m_image.pixels[i] = color(_r,_r,_r);
-    display2.m_image.pixels[i] = color(_g,_g,_g);
-    display3.m_image.pixels[i] = color(_b,_b,_b);
-    display4.m_image.pixels[i] = color(_a,_a,_a);
+    display1.m_image.pixels[i] = color(_r, _r, _r);
+    display2.m_image.pixels[i] = color(_g, _g, _g);
+    display3.m_image.pixels[i] = color(_b, _b, _b);
+    display4.m_image.pixels[i] = color(_a, _a, _a);
   }
-
 }
 
 int CombineChannels()
@@ -82,14 +81,39 @@ int CombineChannels()
     result = createImage(_width, _height, ARGB);
 
     // Iterate through all the pixels
+    float pixelColors[] = new float[4];
     int pixelCount = _width * _height;
     for (int i = 0; i < pixelCount; i++)
     {
+      // Acquire pixel color from each image 
+      for (int p = 0; p < 4; p++)
+      {
+        if (Channels[p])
+        {
+          switch (displays[p+1].selected_channel.m_selectionID)
+          {
+          case 0:
+            pixelColors[p] = red(display1.m_image.pixels[i]);
+            break;
+          case 1:
+            pixelColors[p] = green(display1.m_image.pixels[i]);
+            break;
+          case 2:
+            pixelColors[p] = blue(display1.m_image.pixels[i]);
+            break;
+          case 3:
+            pixelColors[p] = alpha(display1.m_image.pixels[i]);
+            break;
+          }
+        } else
+          pixelColors[p] = 0;
+      }
+
       result.pixels[i] = color(
-        Channels[0] ? red(display1.m_image.pixels[i]) : 0, 
-        Channels[1] ? red(display2.m_image.pixels[i]) : 0, 
-        Channels[2] ? red(display3.m_image.pixels[i]) : 0, 
-        red(display4.m_image.pixels[i])
+        pixelColors[0], 
+        pixelColors[1], 
+        pixelColors[2],
+        pixelColors[3]//red(display4.m_image.pixels[i])
         );
     }
     //
@@ -98,7 +122,7 @@ int CombineChannels()
   else
   {
     result = createImage(_width, _height, RGB);
-    
+
     // Iterate through all the pixels
     int pixelCount = _width * _height;
     for (int i = 0; i < pixelCount; i++)

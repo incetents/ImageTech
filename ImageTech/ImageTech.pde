@@ -8,31 +8,53 @@ final int image_size_large = image_size_small * 4;
 final int text_size = 12;
 
 // Data
-boolean mouseDown = false;
+boolean mouseLeftDown = false;
+boolean mouseRightDown = false;
+boolean mouseCenterDown = false;
 
 // Mouse Start
-PVector mouseClickStart = new PVector(0, 0);
-PVector mouseDragDelta = new PVector(0, 0);
+PVector mouseLeftClickStart = new PVector(0, 0);
+PVector mouseRightClickStart = new PVector(0, 0);
+PVector mouseLeftDragDelta = new PVector(0, 0);
+PVector mouseRightDragDelta = new PVector(0, 0);
 
 // Error time
 int error_time = 0;
 
 // Button
 Button buttons[] = new Button[4];
-Button GetHoveredButton()
+Button GetPressedGlobalButton()
 {
+  // Global Buttons
   for (int i = 0; i < 4; i++)
-    if (buttons[i] != null && buttons[i].isHovered())
+    if (buttons[i] != null && buttons[i].isClicked())
       return buttons[i];
 
   // no buttons found
   return null;
 }
+Button GetPressedChannelButton()
+{
+  // Channel Buttons
+  for (int i = 1; i < 5; i++)
+  {
+    for (int j = 0; j < 5; j++)
+    {
+      if (displays[i].buttons[j].isClicked())
+      {
+        return displays[i].buttons[j];
+      }
+    }
+  }
 
-Button btn_exportOption1 = new Button(565, 492, 15, 15, color(255)); // tga
-Button btn_exportOption2 = new Button(565, 492 - 20, 15, 15, color(255)); // tiff
-Button btn_exportOption3 = new Button(565, 492 - 40, 15, 15, color(255)); // jpg
-Button btn_exportOption4 = new Button(565, 492 - 60, 15, 15, color(255)); // png
+  // no buttons found
+  return null;
+}
+
+Button btn_exportOption1 = new Button(565, 492, 15, 15, color(255), 0); // tga
+Button btn_exportOption2 = new Button(565, 492 - 20, 15, 15, color(255), 1); // tiff
+Button btn_exportOption3 = new Button(565, 492 - 40, 15, 15, color(255), 2); // jpg
+Button btn_exportOption4 = new Button(565, 492 - 60, 15, 15, color(255), 3); // png
 
 Button selected_exportOption = btn_exportOption4;
 
@@ -119,51 +141,103 @@ void setup()
 void update()
 {
   // Update drag value
-  if (mouseDown)
+  if (mouseLeftDown)
   {
-    mouseDragDelta.x = mouseX - mouseClickStart.x;
-    mouseDragDelta.y = mouseY - mouseClickStart.y;
+    mouseLeftDragDelta.x = mouseX - mouseLeftClickStart.x;
+    mouseLeftDragDelta.y = mouseY - mouseLeftClickStart.y;
   } else
   {
-    mouseDragDelta.x = 0;
-    mouseDragDelta.y = 0;
+    mouseLeftDragDelta.x = 0;
+    mouseLeftDragDelta.y = 0;
+  }
+  if (mouseRightDown)
+  {
+    mouseRightDragDelta.x = mouseX - mouseRightClickStart.x;
+    mouseRightDragDelta.y = mouseY - mouseRightClickStart.y;
+  } else
+  {
+    mouseRightDragDelta.x = 0;
+    mouseRightDragDelta.y = 0;
   }
 
-  // Acquire dragged display
-  if (mouseDown && displayDragged == null)
+  // Check button presses
+  Button clickedExportButton = GetPressedGlobalButton();
+  Button clickedChannelButton = GetPressedChannelButton();
+
+  // Click export
+  if (clickedExportButton != null)
   {
-    displayDragged = GetHoveredDisplay();
-    displayDragOriginalPosition.set(displayDragged.m_position);
-    // Cannot drag first display
-    if (displayDragged == display0)
-      displayDragged = null;
+    selected_exportOption = clickedExportButton;
   }
-  // Drop dragged display
-  else if (!mouseDown && displayDragged != null)
+  // click channel/export
+  else if (clickedChannelButton != null)
   {
-    for (int i = 1; i < 5; i++)
+    int resultID = clickedChannelButton.m_selectionID;
+    switch(resultID)
     {
-      // Check if dropped on another display
-      if (displays[i] != null && displays[i].isHovered() && displays[i] != displayDragged)
-      {
-        // Swap images
-        PImage temp = displayDragged.m_image;
-        displayDragged.m_image = displays[i].m_image;
-        displays[i].m_image = temp;
-      }
+    case 0:
+      clickedChannelButton.m_imageParent.selected_channel = clickedChannelButton.m_imageParent.btn_channel_r;
+      break;
+    case 1:
+      clickedChannelButton.m_imageParent.selected_channel = clickedChannelButton.m_imageParent.btn_channel_g;
+      break;
+    case 2:
+      clickedChannelButton.m_imageParent.selected_channel = clickedChannelButton.m_imageParent.btn_channel_b;
+      break;
+    case 3:
+      clickedChannelButton.m_imageParent.selected_channel = clickedChannelButton.m_imageParent.btn_channel_a;
+      break;
     }
-    // Revert drag position and remove dragging
-    displayDragged.m_position.set(displayDragOriginalPosition);  
-    displayDragged = null;
   }
 
-  // Move dragged display
-  if (displayDragged != null)
+  // scroll click to remove image
+  if (mouseCenterDown)
   {
-    // Start at original position
-    displayDragged.m_position.set(displayDragOriginalPosition);
-    // Move based on drag delta
-    displayDragged.m_position.add(mouseDragDelta);
+    displayHighlighted = GetHoveredDisplay();
+    displayHighlighted.m_image = null;
+  }
+  // Display image
+    if (mouseLeftDown)
+      displayHighlighted = GetHoveredDisplay();
+
+  // selecting and dragging images
+  {
+    // Acquire dragged display
+    if (mouseRightDown && displayDragged == null)
+    {
+      displayDragged = GetHoveredDisplay();
+      displayDragOriginalPosition.set(displayDragged.m_position);
+      // Cannot drag first display
+      if (displayDragged == display0)
+        displayDragged = null;
+    }
+    // Drop dragged display
+    else if (!mouseRightDown && displayDragged != null)
+    {
+      for (int i = 1; i < 5; i++)
+      {
+        // Check if dropped on another display
+        if (displays[i] != null && displays[i].isHovered() && displays[i] != displayDragged)
+        {
+          // Swap images
+          PImage temp = displayDragged.m_image;
+          displayDragged.m_image = displays[i].m_image;
+          displays[i].m_image = temp;
+        }
+      }
+      // Revert drag position and remove dragging
+      displayDragged.m_position.set(displayDragOriginalPosition);  
+      displayDragged = null;
+    }
+
+    // Move dragged display
+    if (displayDragged != null)
+    {
+      // Start at original position
+      displayDragged.m_position.set(displayDragOriginalPosition);
+      // Move based on drag delta
+      displayDragged.m_position.add(mouseRightDragDelta);
+    }
   }
 }
 
@@ -196,7 +270,7 @@ void draw()
     if (displays[i] != null)
       displays[i].drawOutline();
   }
-  
+
   stroke(GetHoveredDisplay().m_outlineColor);
   strokeWeight(3);
   GetHoveredDisplay().drawOutline();
@@ -218,23 +292,33 @@ void draw()
   DropshadowText("[Scroll Click] Delete image", _text_x, _text_y_base - 45, color(0), color(255));
   DropshadowText("You can re-order channels by dragging and dropping", _text_x, _text_y_base - 60, color(0), color(255));
 
-  // Export Text
-  DropshadowText("Export Format:", 550, 503 - 80, color(0), color(255));
-  DropshadowText("(PNG)", 589, 503 - 60, color(0), color(255));
-  DropshadowText("(JPG)", 589, 503 - 40, color(0), color(255));
-  DropshadowText("(TIFF)", 589, 503 - 20, color(0), color(255));
-  DropshadowText("(TGA)", 589, 503, color(0), color(255));
-  
   // Error Message
-  if(error_time > millis())
+  if (error_time > millis())
     DropshadowText("ERROR: FILE SIZES MUST MATCH WIDTH/HEIGHT", 320 - 80, 256 - 14, color(0), color(255, 50, 50, 255));
 
-  // Draw Buttons
-  for (int i = 0; i < 4; i++)
+  // Draw Buttons (if no dragging is occurring)
+  if (displayDragged == null)
   {
-    buttons[i].draw();
-    if (buttons[i] == selected_exportOption)
-      buttons[i].drawSelected();
+    // Export Text
+    DropshadowText("Export Format:", 550, 503 - 80, color(0), color(255));
+    DropshadowText("(PNG)", 589, 503 - 60, color(0), color(255));
+    DropshadowText("(JPG)", 589, 503 - 40, color(0), color(255));
+    DropshadowText("(TIFF)", 589, 503 - 20, color(0), color(255));
+    DropshadowText("(TGA)", 589, 503, color(0), color(255));
+
+    // Draw Global Buttons
+    for (int i = 0; i < 4; i++)
+    {
+      buttons[i].draw();
+      if (buttons[i] == selected_exportOption)
+        buttons[i].drawSelected();
+    }
+    // Draw Display Buttons
+    for (int i = 1; i < 5; i++)
+    {
+      if (displays[i] != null)
+        displays[i].drawButtons();
+    }
   }
 }
 
@@ -321,35 +405,22 @@ void mousePressed()
   // Left Click
   if (mouseButton == LEFT)
   {
-    mouseClickStart = new PVector(mouseX, mouseY);
-    mouseDown = true;
-
-    // Check if button was clicked
-    Button clickedButton = GetHoveredButton();
-
-    // If no button is hovered, check if selection was clicked
-    if (clickedButton == null)
-      displayHighlighted = GetHoveredDisplay();
-    // Update clicked button
-    else
-      selected_exportOption = clickedButton;
-  }
-  // Middle click
-  else if (mouseButton == CENTER)
+    mouseLeftClickStart = new PVector(mouseX, mouseY);
+    mouseLeftDown = true;
+  } else if (mouseButton == CENTER)
+    mouseCenterDown = true;
+  else if (mouseButton == RIGHT)
   {
-    // Check if button was clicked
-    Button clickedButton = GetHoveredButton();
-
-    // If no button is hovered, check if selection was clicked
-    if (clickedButton == null)
-    {
-      // Remove image
-      displayHighlighted = GetHoveredDisplay();
-      displayHighlighted.m_image = null;
-    }
+    mouseRightClickStart = new PVector(mouseX, mouseY);
+    mouseRightDown = true;
   }
 }
 void mouseReleased()
 {
-  mouseDown = false;
+  if (mouseButton == LEFT)
+    mouseLeftDown = false;
+  else if (mouseButton == CENTER)
+    mouseCenterDown = false;
+  else if (mouseButton == RIGHT)
+    mouseRightDown = false;
 }
