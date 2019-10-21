@@ -49,28 +49,15 @@ int CombineChannels()
   if (ChannelCount == 0)
     return 1;
 
-  // Acquire size from first available channel
+  // Acquire size from largest available channel
   int _width = 0;
   int _height = 0;
   for (int i = 0; i < 4; i++)
   {
     if (Channels[i])
     {
-      _width = displays[i+1].m_image.width;
-      _height = displays[i+1].m_image.height;
-    }
-  }
-
-  // Check if all other available channels have the same size
-  for (int i = 0; i < 4; i++)
-  {
-    if (Channels[i])
-    {
-      if (_width != displays[i+1].m_image.width)
-        return 2;
-
-      if (_height != displays[i+1].m_image.height)
-        return 3;
+      _width = max(_height, displays[i+1].m_image.width);
+      _height = max(_height, displays[i+1].m_image.height);
     }
   }
 
@@ -81,39 +68,14 @@ int CombineChannels()
     result = createImage(_width, _height, ARGB);
 
     // Iterate through all the pixels
-    float pixelColors[] = new float[4];
     int pixelCount = _width * _height;
     for (int i = 0; i < pixelCount; i++)
     {
-      // Acquire pixel color from each image 
-      for (int p = 0; p < 4; p++)
-      {
-        if (Channels[p])
-        {
-          switch (displays[p+1].selected_channel.m_selectionID)
-          {
-          case 0:
-            pixelColors[p] = red(display1.m_image.pixels[i]);
-            break;
-          case 1:
-            pixelColors[p] = green(display1.m_image.pixels[i]);
-            break;
-          case 2:
-            pixelColors[p] = blue(display1.m_image.pixels[i]);
-            break;
-          case 3:
-            pixelColors[p] = alpha(display1.m_image.pixels[i]);
-            break;
-          }
-        } else
-          pixelColors[p] = 0;
-      }
-
       result.pixels[i] = color(
-        pixelColors[0], 
-        pixelColors[1], 
-        pixelColors[2],
-        pixelColors[3]//red(display4.m_image.pixels[i])
+        Channels[0] ? display1.GetPixelColorFromSelectedChannel(i, _width, _height) : 0, 
+        Channels[1] ? display2.GetPixelColorFromSelectedChannel(i, _width, _height) : 0, 
+        Channels[2] ? display3.GetPixelColorFromSelectedChannel(i, _width, _height) : 0, 
+        Channels[3] ? display4.GetPixelColorFromSelectedChannel(i, _width, _height) : 0
         );
     }
     //
@@ -128,9 +90,9 @@ int CombineChannels()
     for (int i = 0; i < pixelCount; i++)
     {
       result.pixels[i] = color(
-        Channels[0] ? red(display1.m_image.pixels[i]) : 0, 
-        Channels[1] ? red(display2.m_image.pixels[i]) : 0, 
-        Channels[2] ? red(display3.m_image.pixels[i]) : 0
+        Channels[0] ? display1.GetPixelColorFromSelectedChannel(i, _width, _height) : 0, 
+        Channels[1] ? display2.GetPixelColorFromSelectedChannel(i, _width, _height) : 0, 
+        Channels[2] ? display3.GetPixelColorFromSelectedChannel(i, _width, _height) : 0
         );
     }
     //

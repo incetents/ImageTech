@@ -5,6 +5,7 @@ class Button
   PVector m_size;
   color m_color;
   int m_selectionID;
+  boolean m_export = false;
   ImageDisplay m_imageParent = null;
 
   Button()

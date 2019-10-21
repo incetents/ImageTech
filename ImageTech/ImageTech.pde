@@ -11,15 +11,13 @@ final int text_size = 12;
 boolean mouseLeftDown = false;
 boolean mouseRightDown = false;
 boolean mouseCenterDown = false;
+boolean HelpMode = true;
 
 // Mouse Start
 PVector mouseLeftClickStart = new PVector(0, 0);
 PVector mouseRightClickStart = new PVector(0, 0);
 PVector mouseLeftDragDelta = new PVector(0, 0);
 PVector mouseRightDragDelta = new PVector(0, 0);
-
-// Error time
-int error_time = 0;
 
 // Button
 Button buttons[] = new Button[4];
@@ -71,6 +69,33 @@ ImageDisplay GetHoveredDisplay()
   // safety
   return display0;
 }
+boolean CheckSizeMismatch()
+{
+  boolean first = true;
+  int _width = 0;
+  int _height = 0;
+
+  for (int i = 1; i < 5; i++)
+  {
+    if (displays[i].m_image != null)
+    {
+      if (first)
+      {
+        _width = displays[i].m_image.width;
+        _height = displays[i].m_image.height;
+        first = false;
+      } else
+      {
+        if (_width != displays[i].m_image.width)
+          return true;
+        if (_height != displays[i].m_image.height)
+          return true;
+      }
+    }
+  }
+
+  return false;
+}
 
 // Display images
 ImageDisplay display0 = new ImageDisplay(image_size_small, 0, image_size_large, image_size_large, "Combined Image", color(255, 255, 0));
@@ -84,6 +109,8 @@ ImageDisplay displayHighlighted = display1;
 // Dragged Display reference
 PVector displayDragOriginalPosition = new PVector(0, 0);
 ImageDisplay displayDragged = null;
+// Export Display reference
+ImageDisplay displayExport = display0;
 
 // Checkerboard image
 PImage checkerboard;
@@ -107,8 +134,20 @@ void setup()
   strokeWeight(3);
   noSmooth();
   textSize(text_size);
+  textLeading(15);
 
   drop = new SDrop(this);
+
+  // Init data
+  display1.btn_export.m_selectionID = 1;
+  display2.btn_export.m_selectionID = 2;
+  display3.btn_export.m_selectionID = 3;
+  display4.btn_export.m_selectionID = 4;
+
+  display1.btn_export.m_export = true;
+  display2.btn_export.m_export = true;
+  display3.btn_export.m_export = true;
+  display4.btn_export.m_export = true;
 
   // Button list
   buttons[0] = btn_exportOption1;
@@ -163,44 +202,20 @@ void update()
   // Check button presses
   Button clickedExportButton = GetPressedGlobalButton();
   Button clickedChannelButton = GetPressedChannelButton();
-
-  // Click export
-  if (clickedExportButton != null)
-  {
-    selected_exportOption = clickedExportButton;
-  }
-  // click channel/export
-  else if (clickedChannelButton != null)
-  {
-    int resultID = clickedChannelButton.m_selectionID;
-    switch(resultID)
-    {
-    case 0:
-      clickedChannelButton.m_imageParent.selected_channel = clickedChannelButton.m_imageParent.btn_channel_r;
-      break;
-    case 1:
-      clickedChannelButton.m_imageParent.selected_channel = clickedChannelButton.m_imageParent.btn_channel_g;
-      break;
-    case 2:
-      clickedChannelButton.m_imageParent.selected_channel = clickedChannelButton.m_imageParent.btn_channel_b;
-      break;
-    case 3:
-      clickedChannelButton.m_imageParent.selected_channel = clickedChannelButton.m_imageParent.btn_channel_a;
-      break;
-    }
-  }
+  boolean ButtonPressed = (clickedExportButton != null) || (clickedChannelButton != null);
 
   // scroll click to remove image
-  if (mouseCenterDown)
+  if (mouseCenterDown && !ButtonPressed)
   {
     displayHighlighted = GetHoveredDisplay();
     displayHighlighted.m_image = null;
   }
   // Display image
-    if (mouseLeftDown)
-      displayHighlighted = GetHoveredDisplay();
+  if (mouseLeftDown && !ButtonPressed)
+    displayHighlighted = GetHoveredDisplay();
 
   // selecting and dragging images
+  if (!ButtonPressed)
   {
     // Acquire dragged display
     if (mouseRightDown && displayDragged == null)
@@ -284,17 +299,35 @@ void draw()
   }
 
   // Settings Text
-  int _text_x = image_size_small + 2;
+  int _text_x = image_size_small + 3;
   int _text_y_base = image_size_large - 4;
-  DropshadowText("[C] Combine Channels", _text_x, _text_y_base, color(0), color(255));
-  DropshadowText("[X] Export Combined Image", _text_x, _text_y_base - 15, color(0), color(255));
-  DropshadowText("[B] Break Combined Image into Channels", _text_x, _text_y_base - 30, color(0), color(255));
-  DropshadowText("[Scroll Click] Delete image", _text_x, _text_y_base - 45, color(0), color(255));
-  DropshadowText("You can re-order channels by dragging and dropping", _text_x, _text_y_base - 60, color(0), color(255));
 
-  // Error Message
-  if (error_time > millis())
-    DropshadowText("ERROR: FILE SIZES MUST MATCH WIDTH/HEIGHT", 320 - 80, 256 - 14, color(0), color(255, 50, 50, 255));
+  // Helpmode text
+  if (HelpMode)
+  {
+    final String Help_Message =
+      "[Left Click] Select an image field\n" +
+      "* Drag and drop images to load them in your selected field\n" +
+      "[Right Click] You can re-order channels by dragging and dropping\n" +
+      "[Scroll Click] Remove image\n" +
+      "[C] Combine Channels\n" +
+      "[X] Export Combined Image\n" +
+      "[B] Break Combined Image into Channels\n" +
+      "[H] Hide text";
+
+    DropshadowText(Help_Message, _text_x, _text_y_base - 105, color(0), color(255)); // -15 per extra line
+  }
+  //
+  else
+  {
+    final String Help_Message = "[H] Show text";
+
+    DropshadowText(Help_Message, _text_x, _text_y_base - 0, color(0), color(255, 55, 55)); // -15 per extra line
+  }
+
+  // Size Mismatch Text
+  if (CheckSizeMismatch())
+    DropshadowText("Sizes do not match, smaller images will be scaled up when combining", _text_x, 26, color(0), color(255, 55, 55)); // -15 per extra line
 
   // Draw Buttons (if no dragging is occurring)
   if (displayDragged == null)
@@ -324,6 +357,10 @@ void draw()
 
 void keyPressed()
 {
+  // Help mode
+  if (key == 'h' || key == 'H')
+    HelpMode = !HelpMode;
+
   // Combine Channels
   if (key == 'c' || key == 'C')
   {
@@ -333,16 +370,6 @@ void keyPressed()
     case 1:
       println("Combine Error: No available channels");
       break;
-
-    case 2:
-      error_time = millis() + 3000;
-      println("Combine Error: Channel Width Mismatch");
-      break;
-
-    case 3:
-      error_time = millis() + 3000;
-      println("Combine Error: Channel Height Mismatch");
-      break;
     }
   }
 
@@ -350,8 +377,10 @@ void keyPressed()
   if (key == 'x' || key == 'X')
   {
     if (display0 != null && display0.m_image != null)
+    {
+      displayExport = display0;
       selectOutput("Select a file to write to:", "fileSelected");
-    else
+    } else
       println("Export Error: image empty");
   }
 
@@ -367,6 +396,12 @@ void keyPressed()
 
 void fileSelected(File selection)
 {
+  if (displayExport == null || displayExport.m_image == null)
+  {
+    println("Export Image is Null");
+    return;
+  }
+
   if (selection != null)
   {
     println("User selected " + selection.getAbsolutePath());
@@ -381,19 +416,19 @@ void fileSelected(File selection)
       end_4.compareTo(".tga") == 0
       )
     {
-      display0.m_image.save(selection.getAbsolutePath());
+      displayExport.m_image.save(selection.getAbsolutePath());
     }
     // Append type from export selection
     else
     {
       if (selected_exportOption == btn_exportOption4)
-        display0.m_image.save(path + ".png");
+        displayExport.m_image.save(path + ".png");
       else if (selected_exportOption == btn_exportOption3)
-        display0.m_image.save(path + ".jpg");
+        displayExport.m_image.save(path + ".jpg");
       else if (selected_exportOption == btn_exportOption2)
-        display0.m_image.save(path + ".tiff");
+        displayExport.m_image.save(path + ".tiff");
       else if (selected_exportOption == btn_exportOption1)
-        display0.m_image.save(path + ".tga");
+        displayExport.m_image.save(path + ".tga");
       else
         println("Export Type Error");
     }
@@ -407,6 +442,50 @@ void mousePressed()
   {
     mouseLeftClickStart = new PVector(mouseX, mouseY);
     mouseLeftDown = true;
+
+    // Check button presses
+    Button clickedExportButton = GetPressedGlobalButton();
+    Button clickedChannelButton = GetPressedChannelButton();
+
+    // Click type export settings
+    if (clickedExportButton != null && clickedChannelButton == null)
+    {
+      selected_exportOption = clickedExportButton;
+    }
+
+    // Click channel export
+    if (clickedExportButton == null && clickedChannelButton != null)
+    {
+      // Export button pressed
+      if (clickedChannelButton.m_export)
+      {
+        displayExport = displays[clickedChannelButton.m_selectionID];
+        if (displayExport != null && displayExport.m_image != null)
+        {
+          selectOutput("Select a file to write to:", "fileSelected");
+        }
+      }
+      // Change channel
+      else
+      {
+        switch(clickedChannelButton.m_selectionID)
+        {
+          // change channel
+        case 0:
+          clickedChannelButton.m_imageParent.selected_channel = clickedChannelButton.m_imageParent.btn_channel_r;
+          break;
+        case 1:
+          clickedChannelButton.m_imageParent.selected_channel = clickedChannelButton.m_imageParent.btn_channel_g;
+          break;
+        case 2:
+          clickedChannelButton.m_imageParent.selected_channel = clickedChannelButton.m_imageParent.btn_channel_b;
+          break;
+        case 3:
+          clickedChannelButton.m_imageParent.selected_channel = clickedChannelButton.m_imageParent.btn_channel_a;
+          break;
+        }
+      }
+    }
   } else if (mouseButton == CENTER)
     mouseCenterDown = true;
   else if (mouseButton == RIGHT)
@@ -418,8 +497,9 @@ void mousePressed()
 void mouseReleased()
 {
   if (mouseButton == LEFT)
+  {
     mouseLeftDown = false;
-  else if (mouseButton == CENTER)
+  } else if (mouseButton == CENTER)
     mouseCenterDown = false;
   else if (mouseButton == RIGHT)
     mouseRightDown = false;

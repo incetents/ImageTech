@@ -85,6 +85,53 @@ class ImageDisplay
       );
   }
 
+  float GetPixelColorFromSelectedChannel(int i, int _targetWidth, int _targetHeight)
+  {
+    // Pixel Fetch
+    if (_targetWidth == m_image.width && _targetHeight == m_image.height)
+    {
+      switch (selected_channel.m_selectionID)
+      {
+      case 0:
+        return red(m_image.pixels[i]);
+      case 1:
+        return green(m_image.pixels[i]);
+      case 2:
+        return blue(m_image.pixels[i]);
+      case 3:
+        return alpha(m_image.pixels[i]);
+      }
+    }
+    // Pixel Sample
+    else
+    {
+      int target_x = i % _targetWidth;
+      int target_y = i / _targetHeight;
+      float resized_x = constrain(float(target_x) / float(_targetWidth), 0.0f, 1.0f);
+      float resized_y = constrain(float(target_y) / float(_targetHeight), 0.0f, 1.0f);
+      int new_x = int(resized_x * float(m_image.width));
+      int new_y = int(resized_y * float(m_image.height));
+
+      color c = m_image.get(new_x, new_y);
+
+      switch (selected_channel.m_selectionID)
+      {
+      case 0:
+        return red(c);
+      case 1:
+        return green(c);
+      case 2:
+        return blue(c);
+      case 3:
+        return alpha(c);
+      }
+    }
+
+    // ERROR ID
+    println("Selected ID ERROR");
+    return 0.0;
+  }
+
   void drawOutline()
   {
     // outline
@@ -97,7 +144,10 @@ class ImageDisplay
   void drawText()
   {
     // Name
-    DropshadowText(m_displayText, int(m_position.x + 2), int(m_position.y + text_size + 1), color(0), color(255));
+    if (this == displayHighlighted)
+      DropshadowText(m_displayText, int(m_position.x + 2), int(m_position.y + text_size + 1), color(0), color(255,255,0));
+    else
+      DropshadowText(m_displayText, int(m_position.x + 2), int(m_position.y + text_size + 1), color(0), color(255));
   }
 
   void drawImage()
