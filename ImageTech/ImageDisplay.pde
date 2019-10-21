@@ -143,6 +143,11 @@ class ImageDisplay
   }
   void drawText()
   {
+    // Bg for text
+    noStroke();
+    fill(0,120);
+    rect(m_position.x, m_position.y, m_size.x, 15);
+    
     // Name
     if (this == displayHighlighted)
       DropshadowText(m_displayText, int(m_position.x + 2), int(m_position.y + text_size + 1), color(0), color(255,255,0));

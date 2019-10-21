@@ -277,7 +277,14 @@ void draw()
   if (displayHighlighted != null)
     displayHighlighted.drawHover();
 
-  // Draw Outline
+  // Draw Display Text
+  for (int i = 0; i < 5; i++)
+  {
+    if (displays[i] != null)
+      displays[i].drawText();
+  }
+
+  // Draw Base Outline
   stroke(0);
   strokeWeight(1);
   for (int i = 0; i < 5; i++)
@@ -286,17 +293,11 @@ void draw()
       displays[i].drawOutline();
   }
 
+  // Draw Colored Outline
   stroke(GetHoveredDisplay().m_outlineColor);
   strokeWeight(3);
   GetHoveredDisplay().drawOutline();
   noStroke();
-
-  // Draw Display Text
-  for (int i = 0; i < 5; i++)
-  {
-    if (displays[i] != null)
-      displays[i].drawText();
-  }
 
   // Settings Text
   int _text_x = image_size_small + 3;
